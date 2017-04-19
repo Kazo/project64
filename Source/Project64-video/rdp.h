@@ -732,7 +732,7 @@ void rdp_noop();
 void rdp_texrect();
 //void rdp_texrectflip();
 void rdp_sync_load();
-void rdp_pipesync();
+void rdp_sync_pipe();
 void rdp_tilesync();
 void rdp_fullsync();
 void rdp_setkeygb();

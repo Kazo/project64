@@ -1612,7 +1612,7 @@ void rdp_sync_load()
     WriteTrace(TraceRDP, TraceDebug, "loadsync - ignored");
 }
 
-void rdp_pipesync()
+void rdp_sync_pipe()
 {
     WriteTrace(TraceRDP, TraceDebug, "pipesync - ignored");
 }
@@ -4062,7 +4062,7 @@ static rdp_instr rdp_command_table[64] =
     rdp_invalid, rdp_invalid, rdp_invalid, rdp_invalid,
     /* 0x20 */
     rdp_invalid, rdp_invalid, rdp_invalid, rdp_invalid,
-    rdp_texrect, rdp_texrect, rdp_sync_load, rdp_pipesync,
+    rdp_texrect, rdp_texrect, rdp_sync_load, rdp_sync_pipe,
     rdp_tilesync, rdp_fullsync, rdp_setkeygb, rdp_setkeyr,
     rdp_setconvert, rdp_setscissor, rdp_setprimdepth, rdp_setothermode,
     /* 0x30 */
@@ -4196,13 +4196,6 @@ void rdphalf_1()
         cmd = (rdp_cmd_data[rdp_cmd_cur] >> 24) & 0x3f;
         rdp.cmd0 = rdp_cmd_data[rdp_cmd_cur + 0];
         rdp.cmd1 = rdp_cmd_data[rdp_cmd_cur + 1];
-        /*
-        uint32_t cmd3 = ((uint32_t*)gfx.RDRAM)[(a>>2)+2];
-        if ((cmd3>>24) == 0xb4)
-        rglSingleTriangle = TRUE;
-        else
-        rglSingleTriangle = FALSE;
-        */
         rdp_command_table[cmd]();
     }
     else
