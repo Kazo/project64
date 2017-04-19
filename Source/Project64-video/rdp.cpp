@@ -861,7 +861,7 @@ EXPORT void CALL ProcessDList(void)
     rdp.pc_i = 0;
     rdp.pc[rdp.pc_i] = dlist_start;
     rdp.dl_count = -1;
-    rdp.halt = 0;
+    rdp.halt = false;
     uint32_t a;
 
     // catches exceptions so that it doesn't freeze
@@ -961,13 +961,14 @@ EXPORT void CALL ProcessDList(void)
     WriteTrace(TraceRDP, TraceDebug, "ProcessDList end");
 }
 
-// undef - undefined instruction, always ignore
-void undef()
+// rdp_invalid - undefined instruction, always ignore
+void rdp_invalid()
 {
     WriteTrace(TraceRDP, TraceWarning, "** undefined ** (%08lx) - IGNORED", rdp.cmd0);
+    g_Notify->BreakPoint(__FILE__, __LINE__);
     *gfx.MI_INTR_REG |= 0x20;
     gfx.CheckInterrupts();
-    rdp.halt = 1;
+    rdp.halt = true;
 }
 
 // spnoop - no operation, always ignore
@@ -3431,7 +3432,7 @@ void DetectFrameBufferUsage()
     rdp.pc_i = 0;
     rdp.pc[rdp.pc_i] = dlist_start;
     rdp.dl_count = -1;
-    rdp.halt = 0;
+    rdp.halt = false;
     rdp.scale_x_bak = rdp.scale_x;
     rdp.scale_y_bak = rdp.scale_y;
 
@@ -4049,22 +4050,22 @@ void rdp_trishadetxtrz()
 static rdp_instr rdp_command_table[64] =
 {
     /* 0x00 */
-    spnoop, undef, undef, undef,
-    undef, undef, undef, undef,
+    spnoop, rdp_invalid, rdp_invalid, rdp_invalid,
+    rdp_invalid, rdp_invalid, rdp_invalid, rdp_invalid,
     rdp_trifill, rdp_trifillz, rdp_tritxtr, rdp_tritxtrz,
     rdp_trishade, rdp_trishadez, rdp_trishadetxtr, rdp_trishadetxtrz,
     /* 0x10 */
-    undef, undef, undef, undef,
-    undef, undef, undef, undef,
-    undef, undef, undef, undef,
-    undef, undef, undef, undef,
+    rdp_invalid, rdp_invalid, rdp_invalid, rdp_invalid,
+    rdp_invalid, rdp_invalid, rdp_invalid, rdp_invalid,
+    rdp_invalid, rdp_invalid, rdp_invalid, rdp_invalid,
+    rdp_invalid, rdp_invalid, rdp_invalid, rdp_invalid,
     /* 0x20 */
-    undef, undef, undef, undef,
+    rdp_invalid, rdp_invalid, rdp_invalid, rdp_invalid,
     rdp_texrect, rdp_texrect, rdp_loadsync, rdp_pipesync,
     rdp_tilesync, rdp_fullsync, rdp_setkeygb, rdp_setkeyr,
     rdp_setconvert, rdp_setscissor, rdp_setprimdepth, rdp_setothermode,
     /* 0x30 */
-    rdp_loadtlut, undef, rdp_settilesize, rdp_loadblock,
+    rdp_loadtlut, rdp_invalid, rdp_settilesize, rdp_loadblock,
     rdp_loadtile, rdp_settile, rdp_fillrect, rdp_setfillcolor,
     rdp_setfogcolor, rdp_setblendcolor, rdp_setprimcolor, rdp_setenvcolor,
     rdp_setcombine, rdp_settextureimage, rdp_setdepthimage, rdp_setcolorimage

@@ -232,7 +232,7 @@ void Turbo3D()
         WriteTrace(TraceRDP, TraceDebug, "GlobalState: %08lx, Object: %08lx, Vertices: %08lx, Triangles: %08lx", pgstate, pstate, pvtx, ptri);
         if (!pstate)
         {
-            rdp.halt = 1;
+            rdp.halt = true;
             break;
         }
         if (pgstate)

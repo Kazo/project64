@@ -432,7 +432,7 @@ public:
     uint32_t segment[16];  // Segment pointer
 
                            // Marks the end of DList execution (done in uc?:enddl)
-    int halt;
+    bool halt;
 
     // Next command
     uint32_t cmd0;
@@ -725,7 +725,7 @@ void load_palette(uint32_t addr, uint16_t start, uint16_t count);
 void setTBufTex(uint16_t t_mem, uint32_t cnt);
 
 // ** RDP graphics functions **
-void undef();
+void rdp_invalid();
 void spnoop();
 
 void rdp_noop();
