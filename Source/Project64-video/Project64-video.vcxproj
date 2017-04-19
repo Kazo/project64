@@ -125,6 +125,7 @@
     <ClInclude Include="ucodeFB.h" />
     <ClInclude Include="Util.h" />
     <ClInclude Include="Version.h" />
+    <ClInclude Include="z64.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Android.cpp" />
