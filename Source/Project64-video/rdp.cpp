@@ -24,6 +24,7 @@
 #include "FBtoScreen.h"
 #include "CRC.h"
 #include <Common/StdString.h>
+#include <Settings/Settings.h>
 #include "trace.h"
 #include "SettingsID.h"
 #include "turbo3D.h"
@@ -1606,7 +1607,7 @@ void rdp_texrect()
     delete[] vnew;
 }
 
-void rdp_loadsync()
+void rdp_sync_load()
 {
     WriteTrace(TraceRDP, TraceDebug, "loadsync - ignored");
 }
@@ -4061,7 +4062,7 @@ static rdp_instr rdp_command_table[64] =
     rdp_invalid, rdp_invalid, rdp_invalid, rdp_invalid,
     /* 0x20 */
     rdp_invalid, rdp_invalid, rdp_invalid, rdp_invalid,
-    rdp_texrect, rdp_texrect, rdp_loadsync, rdp_pipesync,
+    rdp_texrect, rdp_texrect, rdp_sync_load, rdp_pipesync,
     rdp_tilesync, rdp_fullsync, rdp_setkeygb, rdp_setkeyr,
     rdp_setconvert, rdp_setscissor, rdp_setprimdepth, rdp_setothermode,
     /* 0x30 */
