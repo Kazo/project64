@@ -1,6 +1,5 @@
 #include "stdafx.h"
 #include <Project64-core/AppInit.h>
-#include <Project64-core/Project64Watch.h>
 #include "Multilanguage\LanguageSelector.h"
 #include "Settings/UISettings.h"
 
@@ -23,8 +22,6 @@ int WINAPI WinMain(HINSTANCE /*hInstance*/, HINSTANCE /*hPrevInstance*/, LPSTR /
 		g_Plugins->SetRenderWindows(&MainWindow, &HiddenWindow);
 		Notify().SetMainWindow(&MainWindow);
 		//CSupportWindow SupportWindow;
-
-		Project64Watch::Start(6520);
 
 		if (g_Settings->LoadStringVal(Cmd_RomFile).length() > 0)
 		{
