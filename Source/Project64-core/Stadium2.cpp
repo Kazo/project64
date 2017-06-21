@@ -312,7 +312,8 @@ namespace Stadium2
 							}
 							break;
 
-							case 0xB0://Yes
+							case 0xB0://2P Yes
+							case 0xB1://1P Yes
 							{
 								SetInput(input1, "A");
 								SetInput(input2, "A");
@@ -355,7 +356,7 @@ namespace Stadium2
 
 					SendInput(0, input1);
 					SendInput(1, input2);
-					std::this_thread::sleep_for(std::chrono::milliseconds(250));
+					std::this_thread::sleep_for(std::chrono::milliseconds(500 + (rand() % 101)));
 				}
 				else
 				{
