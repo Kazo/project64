@@ -64,7 +64,7 @@ void CNotificationImp::DisplayError(const char * Message) const
     {
         Parent = reinterpret_cast<HWND>(m_hWnd->GetWindowHandle());
     }
-    MessageBoxW(Parent, stdstr(Message).ToUTF16().c_str(), wGS(MSG_MSGBOX_TITLE).c_str(), MB_OK | MB_ICONERROR | MB_SETFOREGROUND);
+    //MessageBoxW(Parent, stdstr(Message).ToUTF16().c_str(), wGS(MSG_MSGBOX_TITLE).c_str(), MB_OK | MB_ICONERROR | MB_SETFOREGROUND);
 }
 
 void CNotificationImp::DisplayMessage(int DisplayTime, LanguageStringID StringID) const

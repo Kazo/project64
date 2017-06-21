@@ -2087,6 +2087,8 @@ void CN64System::SyncToAudio()
 
 void CN64System::RefreshScreen()
 {
+	Project64Watch::UpdateFrameCounter();
+
 	PROFILE_TIMERS CPU_UsageAddr = Timer_None/*, ProfilingAddr = Timer_None*/;
 	uint32_t VI_INTR_TIME = 500000;
 

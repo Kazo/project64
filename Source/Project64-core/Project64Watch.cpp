@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "Project64Watch.h"
+#include "Stadium2.h"
 #include "N64System\N64Class.h"
 #include "N64System\SystemGlobals.h"
 #include <thread>
@@ -41,13 +42,16 @@ namespace Project64Watch
 	unsigned int VKeyTimers[4];
 
 	char* mBuffer;
-	unsigned int mSize;
+
+	unsigned int FrameCounter;
 
 	void Start(int port)
 	{
 		Port = port;
 		std::thread t1(Run);
 		t1.detach();
+
+		Stadium2::Start();
 	}
 
 	void Run()
@@ -69,11 +73,13 @@ namespace Project64Watch
 			g_Notify->DisplayMessage(5, "socket failed");
 			return;
 		}
+
 		if (bind(sListen, (SOCKADDR*)&addr, sizeof(addr)) != 0)
 		{
 			g_Notify->DisplayMessage(5, "bind failed");
 			return;
 		}
+
 		if (listen(sListen, SOMAXCONN) != 0)
 		{
 			g_Notify->DisplayMessage(5, "listen failed");
@@ -87,14 +93,17 @@ namespace Project64Watch
 		while (true)
 		{
 			sClient = accept(sListen, (SOCKADDR*)&addr, &addrlen);
-			setsockopt(sClient, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(int));
+			//setsockopt(sClient, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(int));
 
+			FrameCounter = 0;
 			g_Notify->DisplayMessage(5, "Client Connected");
-			/*sSize = 0x0C;
+
+			//Hello
+			sSize = 0x0C;
 			sBuffer = (char*)realloc(sBuffer, sSize);
 			memset(sBuffer, 0x00, sSize);
 			memcpy(sBuffer, &MAGIC, 4);
-			SendPacket();*/
+			SendPacket();
 
 			int result = 0;
 			while (true)
@@ -105,7 +114,7 @@ namespace Project64Watch
 				if (result == -1)
 				{
 					g_Notify->DisplayMessage(5, "Client Disconnected");
-					sClient = NULL;
+					closesocket(sClient);
 					break;
 				}
 				else
@@ -124,108 +133,152 @@ namespace Project64Watch
 						{
 							switch (pCommand)
 							{
-								case 0x01://Read Memory
+							case 0x00://Get FrameCount
+							{
+								pCommand = 0x00;
+								pSize = 0x04;
+								sSize = pSize + 0x0C;
+								sBuffer = (char*)realloc(sBuffer, sSize);
+								memset(sBuffer, 0x00, sSize);
+								memcpy(sBuffer, &MAGIC, 4);
+								memcpy(sBuffer + 0x04, &pCommand, 4);
+								memcpy(sBuffer + 0x08, &pSize, 4);
+								memcpy(sBuffer + 0x0C, &FrameCounter, pSize);
+								SendPacket();
+							}
+							break;
+
+							case 0x01://Read Memory
+							{
+								//sprintf(strBuffer, "Received Memory Read %02X %06X %06X", pCommand, pAddress, pSize);
+								//g_Notify->DisplayMessage(5, strBuffer);
+								aAddress = pAddress & 0xFFFFFC;
+								aSize = (((pSize + (pAddress & 0x03) + 0x04 - 0x01) / 0x04) * 0x04);
+
+								mBuffer = (char*)realloc(mBuffer, aSize);
+
+								memcpy(mBuffer, g_MMU->Rdram() + aAddress, aSize);
+								OrderFlip();
+
+								pCommand = (pCommand << 0x18) + pAddress;
+								sSize = pSize + 0x0C;
+								sBuffer = (char*)realloc(sBuffer, sSize);
+								memset(sBuffer, 0x00, sSize);
+								memcpy(sBuffer, &MAGIC, 4);
+								memcpy(sBuffer + 0x04, &pCommand, 4);
+								memcpy(sBuffer + 0x08, &pSize, 4);
+								memcpy(sBuffer + 0x0C, mBuffer + (pAddress & 0x03), pSize);
+								SendPacket();
+							}
+							break;
+
+							case 0x02://Write Memory
+							{
+								//sprintf(strBuffer, "Received Memory Write %02X %06X %06X", pCommand, pAddress, pSize);
+								//g_Notify->DisplayMessage(5, strBuffer);
+								if (sizeof(rBuffer) > pSize + 0x0C)//If packet is large enough for pSize
 								{
-									//sprintf(strBuffer, "Received Memory Read %02X %06X %06X", pCommand, pAddress, pSize);
-									//g_Notify->DisplayMessage(5, strBuffer);
 									aAddress = pAddress & 0xFFFFFC;
 									aSize = (((pSize + (pAddress & 0x03) + 0x04 - 0x01) / 0x04) * 0x04);
 
-									mSize = aSize;
-									mBuffer = (char*)realloc(mBuffer, mSize);
+									mBuffer = (char*)realloc(mBuffer, aSize);
 
-									memcpy(mBuffer, g_MMU->Rdram() + aAddress, mSize);
+									memcpy(mBuffer, g_MMU->Rdram() + aAddress, aSize);
 									OrderFlip();
 
-									pCommand = (pCommand << 0x18) + pAddress;
-									sSize = pSize + 0x0C;
-									sBuffer = (char*)realloc(sBuffer, sSize);
-									memset(sBuffer, 0x00, sSize);
-									memcpy(sBuffer, &MAGIC, 4);
-									memcpy(sBuffer + 0x04, &pCommand, 4);
-									memcpy(sBuffer + 0x08, &pSize, 4);
-									memcpy(sBuffer + 0x0C, mBuffer + (pAddress & 0x03), pSize);
-									SendPacket();
-								}
-								break;
+									memcpy(mBuffer + (pAddress & 0x03), rBuffer + 0x0C, pSize);
+									OrderFlip();
 
-								case 0x02://Write Memory
+									memcpy(g_MMU->Rdram() + aAddress, mBuffer, aSize);
+								}
+							}
+							break;
+
+							case 0x03://Input
+							{
+								//sprintf(strBuffer, "Received Input %02X %08X", pAddress, pSize);
+								//g_Notify->DisplayMessage(5, strBuffer);
+								VKeys[pAddress] = pSize;
+								VKeyTimers[pAddress] = 2;//frames?
+							}
+							break;
+
+							case 0x04://Misc
+							{
+								//sprintf(strBuffer, "Received Command %02X %02X", pAddress, pSize);
+								//g_Notify->DisplayMessage(5, strBuffer);
+								switch (pAddress)
 								{
-									//sprintf(strBuffer, "Received Memory Write %02X %06X %06X", pCommand, pAddress, pSize);
-									//g_Notify->DisplayMessage(5, strBuffer);
-									if (sizeof(rBuffer) > pSize + 0x0C)//If packet is large enough for pSize
-									{
-										aAddress = pAddress & 0xFFFFFC;
-										aSize = (((pSize + (pAddress & 0x03) + 0x04 - 0x01) / 0x04) * 0x04);
-
-										mSize = aSize;
-										mBuffer = (char*)realloc(mBuffer, mSize);
-
-										memcpy(mBuffer, g_MMU->Rdram() + aAddress, mSize);
-										OrderFlip();
-
-										memcpy(mBuffer + (pAddress & 0x03), rBuffer + 0x0C, pSize);
-										OrderFlip();
-
-										memcpy(g_MMU->Rdram() + aAddress, mBuffer, mSize);
-									}
-								}
-								break;
-
-								case 0x03://Input
+								case 0x00:
 								{
-									//sprintf(strBuffer, "Received Input %02X %08X", pAddress, pSize);
-									//g_Notify->DisplayMessage(5, strBuffer);
-									VKeys[pAddress] = pSize;
-									VKeyTimers[pAddress] = 2;//frames?
+									WriteTrace(TraceUserInterface, TraceDebug, "ID_SYSTEM_PAUSE");
+									g_BaseSystem->ExternalEvent(g_Settings->LoadBool(GameRunning_CPU_Paused) ? SysEvent_ResumeCPU_FromMenu : SysEvent_PauseCPU_FromMenu);
+									WriteTrace(TraceUserInterface, TraceDebug, "ID_SYSTEM_PAUSE 1");
 								}
 								break;
 
-								case 0x04://Misc
+								case 0x01:
 								{
-									//sprintf(strBuffer, "Received Command %02X %02X", pAddress, pSize);
-									//g_Notify->DisplayMessage(5, strBuffer);
-									switch (pAddress)
-									{
-										case 0x00:
-										{
-											WriteTrace(TraceUserInterface, TraceDebug, "ID_SYSTEM_PAUSE");
-											g_BaseSystem->ExternalEvent(g_Settings->LoadBool(GameRunning_CPU_Paused) ? SysEvent_ResumeCPU_FromMenu : SysEvent_PauseCPU_FromMenu);
-											WriteTrace(TraceUserInterface, TraceDebug, "ID_SYSTEM_PAUSE 1");
-										}
-										break;
-
-										case 0x01:
-										{
-											WriteTrace(TraceUserInterface, TraceDebug, "ID_SYSTEM_RESET_HARD");
-											g_BaseSystem->ExternalEvent(SysEvent_ResetCPU_Hard);
-										}
-										break;
-
-										case 0x02:
-										{
-											sprintf(strBuffer, "Save Slot (Slot %d) selected", pSize);
-											g_Notify->DisplayMessage(3, strBuffer);
-											g_Settings->SaveDword(Game_CurrentSaveState, pSize);
-										}
-										break;
-
-										case 0x03:
-										{
-											WriteTrace(TraceUserInterface, TraceDebug, "ID_SYSTEM_SAVE");
-											g_BaseSystem->ExternalEvent(SysEvent_SaveMachineState);
-										}
-										break;
-
-										case 0x04:
-										{
-											WriteTrace(TraceUserInterface, TraceDebug, "ID_SYSTEM_RESTORE");
-											g_BaseSystem->ExternalEvent(SysEvent_LoadMachineState);
-										}
-										break;
-									}
+									WriteTrace(TraceUserInterface, TraceDebug, "ID_SYSTEM_RESET_HARD");
+									g_BaseSystem->ExternalEvent(SysEvent_ResetCPU_Hard);
 								}
 								break;
+
+								case 0x02:
+								{
+									sprintf(strBuffer, "Save Slot (Slot %d) selected", pSize);
+									g_Notify->DisplayMessage(3, strBuffer);
+									g_Settings->SaveDword(Game_CurrentSaveState, pSize);
+								}
+								break;
+
+								case 0x03:
+								{
+									WriteTrace(TraceUserInterface, TraceDebug, "ID_SYSTEM_SAVE");
+									g_BaseSystem->ExternalEvent(SysEvent_SaveMachineState);
+								}
+								break;
+
+								case 0x04:
+								{
+									WriteTrace(TraceUserInterface, TraceDebug, "ID_SYSTEM_RESTORE");
+									g_BaseSystem->ExternalEvent(SysEvent_LoadMachineState);
+								}
+								break;
+
+								case 0x05:
+								{
+									closesocket(sClient);
+									closesocket(sListen);
+									system("restart.bat");
+								}
+								break;
+								}
+							}
+							break;
+
+							case 0x05://Team1
+							{
+								if (pSize == 0x60 * 0x03)
+								{
+									mBuffer = (char*)realloc(mBuffer, pSize);
+									memcpy(mBuffer, rBuffer + 0x0C, pSize);
+									Stadium2::SetTeam1(mBuffer, pSize);
+								}
+							}
+							break;
+
+							case 0x06://Team2
+							{
+								if (pSize == 0x60 * 0x03)
+								{
+									mBuffer = (char*)realloc(mBuffer, pSize);
+									memcpy(mBuffer, rBuffer + 0x0C, pSize);
+									Stadium2::SetTeam2(mBuffer, pSize);
+									Stadium2::SetTeamsReady();
+								}
+							}
+							break;
 							}
 						}
 					}
@@ -234,10 +287,49 @@ namespace Project64Watch
 		}
 	}
 
+	void SendTeamUpdate(char* TeamData)
+	{
+		sSize = 0xC + (0x58 * 0x03);
+		sBuffer = (char*)realloc(sBuffer, sSize);
+		memset(sBuffer, 0x00, sSize);
+		pCommand = (0x01 << 0x18);
+		pSize = 0x58 * 0x03;
+		memcpy(sBuffer, &MAGIC, 4);
+		memcpy(sBuffer + 0x04, &pCommand, 4);
+		memcpy(sBuffer + 0x08, &pSize, 4);
+		memcpy(sBuffer + 0x0C, TeamData, pSize);
+		SendPacket();
+	}
+
+	void SendBattleText(char* TextData)
+	{
+		sSize = 0x18C;
+		sBuffer = (char*)realloc(sBuffer, sSize);
+		memset(sBuffer, 0x00, sSize);
+		pCommand = (0x02 << 0x18);
+		pSize = 0x180;
+		memcpy(sBuffer, &MAGIC, 4);
+		memcpy(sBuffer + 0x04, &pCommand, 4);
+		memcpy(sBuffer + 0x08, &pSize, 4);
+		memcpy(sBuffer + 0x0C, TextData, pSize);
+		SendPacket();
+	}
+
+	void SendBattleResult(unsigned int player)
+	{
+		sSize = 0x0C;
+		sBuffer = (char*)realloc(sBuffer, sSize);
+		memset(sBuffer, 0x00, sSize);
+		pCommand = (0x03 << 0x18) + player;
+		memcpy(sBuffer, &MAGIC, 4);
+		memcpy(sBuffer + 0x04, &pCommand, 4);
+		SendPacket();
+	}
+
 	void OrderFlip()
 	{
 		char temp = 0;
-		for (int i = 0; i < mSize; i += 4)
+		for (int i = 0; i < aSize; i += 4)
 		{
 			temp = mBuffer[i];
 			mBuffer[i] = mBuffer[i + 3];
@@ -276,6 +368,16 @@ namespace Project64Watch
 		}
 	}
 
+	void UpdateFrameCounter()
+	{
+		FrameCounter++;
+	}
+
+	unsigned int GetFrameCounter()
+	{
+		return FrameCounter;
+	}
+
 	uint32_t GetVKeys(int32_t Control, bool timer)
 	{
 		if (timer)
@@ -290,5 +392,22 @@ namespace Project64Watch
 			}
 		}
 		return VKeys[Control];
+	}
+
+	void SetVKeys(unsigned int player, unsigned int keys)
+	{
+		VKeys[player] = keys;
+		VKeyTimers[player] = 2;
+	}
+
+	void Restart()
+	{
+		if (!g_Settings->LoadBool(GameRunning_CPU_Paused))
+		{
+			closesocket(sClient);
+			closesocket(sListen);
+			system("restart.bat");
+		}
+		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 	}
 }

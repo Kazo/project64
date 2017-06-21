@@ -336,10 +336,13 @@
     <ClCompile Include="N64System\Recompiler\Arm\ArmRegInfo.cpp">
       <Filter>Source Files\N64 System\Recompiler\Arm</Filter>
     </ClCompile>
+    <ClCompile Include="AppInit.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="Project64Watch.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="AppInit.cpp">
+    <ClCompile Include="Stadium2.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -657,6 +660,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Project64Watch.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Stadium2.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

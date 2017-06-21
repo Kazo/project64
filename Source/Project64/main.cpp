@@ -7,6 +7,7 @@ int WINAPI WinMain(HINSTANCE /*hInstance*/, HINSTANCE /*hPrevInstance*/, LPSTR /
 {
 	try
 	{
+		SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX);//Prevents the "Project64.exe has stopped working" message on crash.
 		CoInitialize(NULL);
 		AppInit(&Notify(), CPath(CPath::MODULE_DIRECTORY), __argc, __argv);
 

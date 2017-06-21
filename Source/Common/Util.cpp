@@ -95,18 +95,18 @@ bool pjutil::TerminatedExistingExe()
                 if (!AskedUser)
                 {
                     AskedUser = true;
-                    int res = MessageBox(NULL, stdstr_f("%s currently running\n\nTerminate pid %d now?", ModuleName.c_str(), lppe.th32ProcessID).c_str(), stdstr_f("Terminate %s",ModuleName.c_str()).c_str(), MB_YESNO | MB_ICONEXCLAMATION);
+                    /*int res = MessageBox(NULL, stdstr_f("%s currently running\n\nTerminate pid %d now?", ModuleName.c_str(), lppe.th32ProcessID).c_str(), stdstr_f("Terminate %s",ModuleName.c_str()).c_str(), MB_YESNO | MB_ICONEXCLAMATION);
                     if (res != IDYES)
                     {
                         break;
-                    }
+                    }*/
                 }
                 HANDLE hHandle = OpenProcess(PROCESS_ALL_ACCESS, FALSE, lppe.th32ProcessID);
                 if (hHandle != NULL)
                 {
                     if (TerminateProcess(hHandle, 0))
                     {
-                        bTerminated = true;
+                        bTerminated = false;
                     }
                     else
                     {

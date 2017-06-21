@@ -194,10 +194,12 @@ static bool ParseCommand(int32_t argc, char **argv)
 		}
 		else if (ArgsLeft != 0 && strcmp(argv[i], "/w") == 0)
 		{
-			char test[256];
-			sprintf(test, "port %d", atoi(argv[i+1]));
 			Project64Watch::Start(atoi(argv[i+1]));
-			return true;
+
+			if (ArgsLeft == 1)
+			{
+				return true;
+			}
 		}
 		else
 		{
