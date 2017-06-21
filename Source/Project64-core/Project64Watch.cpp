@@ -279,6 +279,18 @@ namespace Project64Watch
 								}
 							}
 							break;
+
+							case 0x07://Ping
+							{
+								pCommand = 0x07 << 0x18;
+								sSize = 0x0C;
+								sBuffer = (char*)realloc(sBuffer, sSize);
+								memset(sBuffer, 0x00, sSize);
+								memcpy(sBuffer, &MAGIC, 4);
+								memcpy(sBuffer + 0x04, &pCommand, 4);
+								SendPacket();
+							}
+							break;
 							}
 						}
 					}
