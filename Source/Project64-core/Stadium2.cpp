@@ -64,7 +64,7 @@ namespace Stadium2
 		TeamsReady = false;
 
 		srand(time(0));
-		std::this_thread::sleep_for(std::chrono::milliseconds(3000));//Give it time to load the game.
+		std::this_thread::sleep_for(std::chrono::milliseconds(5000));//Give it time to load the game.
 		while (true)
 		{
 			if (isGameRunning())
@@ -564,8 +564,8 @@ namespace Stadium2
 
 	void EditNames()
 	{
-		Write("RED TEAM", 0x147D30, 0x09);
-		Write("BLUE TEAM", 0x147D3C, 0x0A);
+		Write("TEAM BLUE", 0x147D30, 0x09);
+		Write("TEAM RED", 0x147D3C, 0x0A);
 	}
 
 	void InjectTeams()
